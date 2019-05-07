@@ -1,0 +1,94 @@
+version: '3.6'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.0.1
+    container_name: elasticsearch
+    secrets:
+      - source: elasticsearch.yml
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+    ports: ['9200:9200']
+    networks: ['stack']
+    #volumes:
+      #- './elasticsearch/data:/usr/share/elasticsearch/data'
+      #- './elasticsearch/conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml'
+    healthcheck:
+      test: curl -s https://localhost:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.0.1
+    container_name: kibana
+    secrets:
+      - source: kibana.yml
+        target: /usr/share/kibana/config/kibana.yml
+    ports: ['5601:5601']
+    networks: ['stack']
+    depends_on: ['elasticsearch']
+    healthcheck:
+      test: curl -s https://localhost:5601 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.0.1
+    container_name: logstash
+    secrets:
+      #- source: logstash.conf
+      #  target: /usr/share/logstash/pipeline/logstash.conf
+      - source: logstash.yml
+        target: /usr/share/logstash/config/logstash.yml
+    networks: ['stack']
+    depends_on: ['elasticsearch']
+    healthcheck:
+      test: bin/logstash -t
+      interval: 60s
+      timeout: 50s
+      retries: 5
+
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.0.1
+    container_name: metricbeat
+    # The commented sections below enable Metricbeat to monitor the Docker host,
+    # rather than the Metricbeat container. It's problematic with Docker for
+    # Windows, however, since "/proc", "/sys" etc. don't exist on Windows.
+    # The same likely applies to OSX (needs testing).
+    volumes:
+       - /proc:/hostfs/proc:ro
+       - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+       - /:/hostfs:ro
+    command: >
+      sh -c "metricbeat --strict.perms=false -e &&
+             sleep 15 &&
+             /usr/local/bin/setup-beat.sh"
+    secrets:
+      - source: metricbeat.yml
+        target: /usr/share/metricbeat/metricbeat.yml
+    volumes:
+      - './metricbeat/conf/setup-beat.sh:/usr/local/bin/setup-beat.sh'
+    networks: ['stack']
+    depends_on: ['elasticsearch', 'kibana']
+    healthcheck:
+      test: metricbeat test config
+      interval: 30s
+      timeout: 15s
+      retries: 5
+
+networks: {stack: {}}
+# use docker volume to persist ES data outside of a container.
+#volumes:
+  #es_data:
+
+secrets:
+  elasticsearch.yml:
+    file: ./elasticsearch/conf/elasticsearch.yml
+  kibana.yml:
+    file: ./kibana/conf/kibana.yml
+  logstash.yml:
+    file: ./logstash/conf/logstash.yml
+  logstash.conf:
+    file: ./logstash/conf/logstash.conf
+  metricbeat.yml:
+    file: ./metricbeat/conf/metricbeat.yml
