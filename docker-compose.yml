@@ -96,10 +96,17 @@ services:
       timeout: 15s
       retries: 5
 
+  elasticalert:
+    image: damianmcdonald/elasticalert:1.0.0
+    container_name: elasticalert
+    environment:
+     - ELASTICSEARCH_HOST=localhost
+     - ELASTICSEARCH_PORT=9200
+    volumes:
+      - './elasticalert/conf:/app/config'
+    network_mode: "host"
+
 networks: {stack: {}}
-# use docker volume to persist ES data outside of a container.
-#volumes:
-  #es_data:
 
 secrets:
   elasticsearch.yml:
