@@ -1,3 +1,79 @@
+# Ubuntu Docker VirtualBox Virtual Machine image
+
+## Overview
+`Ubuntu-Docker`is a VirtualBox virtual machine image created using ISO image `xubuntu-18.04.2-desktop-amd64.iso`.
+
+The image contains the following key software:
+
+| Software | Version | Purpose |
+| ------------- | ------------- | ------------- |
+| [Xubuntu](https://xubuntu.org/) | xubuntu-18.04.2-desktop-amd64 | Base Linux installation |
+| [Docker](https://www.docker.com/) | Docker version 18.09.6, build 481bc77 | Performs operating-system-level virtualization |
+| [Docker Compose](https://docs.docker.com/compose/) | docker-compose version 1.24.0, build 0aa59064 | Tool for defining and running multi-container Docker applications |
+| [OpenJDK](https://openjdk.java.net/) | openjdk version 1.8.0_191 | A free and open-source implementation of the Java Platform, Standard Edition |
+| [Apache Maven](https://maven.apache.org/) | Apache Maven 3.6.1 | A build automation tool used primarily for Java projects. Maven addresses two aspects of building software: first, it describes how software is built, and second, it describes its dependencies |
+| [Gradle Build Tool](https://gradle.org/) | Gradle 5.4.1 | An open-source build automation system that builds upon the concepts of Apache Ant and Apache Maven and introduces a Groovy-based domain-specific language instead of the XML form used by Apache Maven for declaring the project configuration |
+
+## Virtual Machine configuration
+The Virtual Machine has been configured using the following settings.
+
+| Setting | key | Value |
+| ------------- | ------------- | ------------- |
+| Logon username | User | **user** |
+| Logon password | Password | **password** |
+| System -> Motherboard | Base memory | 8192 MB |
+| System -> Processor | Processor(s) | 1 CPU |
+| Storage | SATA Contoller | `Ubuntu-Docker.vdi` (Virtual Size: 40,00 GB, Dynamically allocated storage) |
+| Network -> Adapter 1 | Attached to: | NAT |
+| USB | Enable USB Controller | USB 1.1 (OHCI) Controller |
+
+
+*General Settings*
+
+![General Settings](images/vm-settings/virtualbox-general.png)
+
+*System Settings*
+
+![System Settings](images/vm-settings/virtualbox-system.png)
+
+*Display Settings*
+
+![Display Settings](images/vm-settings/virtualbox-display.png)
+
+*Storage Settings*
+
+![Storage Settings](images/vm-settings/virtualbox-storage.png)
+
+*Audio Settings*
+
+![Audio Settings](images/vm-settings/virtualbox-audio.png)
+
+*Network Settings*
+
+![Network Settings](images/vm-settings/virtualbox-network.png)
+
+*Serial Ports Settings*
+
+![Serial Ports Settings](images/vm-settings/virtualbox-serial-ports.png)
+
+*USB Settings*
+
+![USB Settings](images/vm-settings/virtualbox-usb.png)
+
+*Shared Folders Settings*
+
+![Shared Folders Settings](images/vm-settings/virtualbox-shared-folders.png)
+
+*User Interface Settings*
+
+![User Interface Settings](images/vm-settings/virtualbox-user-interface.png)
+
+## Virtual Machine software installation
+Software and environment configuration has been performed using the [install.sh](../scripts/install.sh) script.
+
+Installation steps are provided below:
+
+```bash
 #!/bin/bash
 
 #################################################
@@ -48,8 +124,7 @@ sudo apt -y upgrade
 sudo apt -y dist-upgrade
 
 # install pre-requisites
-sudo apt -y install python3 unzip build-essential dkms linux-headers-$(uname -r) apt-transport-https ca-certificates curl wget software-properties-common openjdk-8-jdk ncftp
-
+sudo apt -y install python3 unzip build-essential dkms linux-headers-$(uname -r) apt-transport-https ca-certificates curl wget software-properties-common openjdk-8-jdk ncftp git
 
 # install and configure docker
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
@@ -119,3 +194,5 @@ rm -f $DISTRIB_DIR/*
 sudo chown -R ${USER} $DEVEL_DIR
 sudo chgrp -R ${USER} $DEVEL_DIR
 sudo chmod -R 775 $DEVEL_DIR
+
+```

@@ -1,19 +1,6 @@
 version: '3.6'
 services:
 
-  servicemock:
-    image: damianmcdonald/servicemock:1.0.2
-    environment:
-     - SERVICEMOCK_LOGS=/app/logs
-     - SERVICEMOCK_NAME=servicemock
-    volumes:
-      - './servicemock/logs:/app/logs'
-    healthcheck:
-      test: if ps -a | grep [s]ervicemock-1.0.2.jar ; then echo 0; else echo 1; fi
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.0.1
     container_name: elasticsearch
@@ -91,6 +78,19 @@ services:
       test: filebeat test config
       interval: 30s
       timeout: 15s
+      retries: 5
+
+  servicemock:
+    image: damianmcdonald/servicemock:1.0.2
+    environment:
+     - SERVICEMOCK_LOGS=/app/logs
+     - SERVICEMOCK_NAME=servicemock
+    volumes:
+      - './servicemock/logs:/app/logs'
+    healthcheck:
+      test: if ps -a | grep [s]ervicemock-1.0.2.jar ; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
       retries: 5
 
   elasticalert:
