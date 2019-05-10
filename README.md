@@ -28,9 +28,9 @@ To simulate a *real world* usage of the Elastic Stack, Yelp's [elastalert](https
 The process flow of the project can be described as follows:
 
  1. `Servicemock` component generates log files. These log files are generated in the [servicemock/logs](servicemock/logs) directory. 3 separate log files are generated with the following format;
-* env.SERVICEMOCK_NAME-FRONTOFFICE.log
-* env.SERVICEMOCK_NAME-BACKOFFICE.log
-* env.SERVICEMOCK_NAME-CTI.log
+* *env.SERVICEMOCK_NAME-FRONTOFFICE.log*
+* *env.SERVICEMOCK_NAME-BACKOFFICE.log*
+* *env.SERVICEMOCK_NAME-CTI.log*
 
 2. `Filebeat` component monitors the log files in the [servicemock/logs](servicemock/logs) directory and ships any new updates contained within the logs to the `logstash` component.
 
