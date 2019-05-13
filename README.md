@@ -73,7 +73,37 @@ At a minimum, the following software is required to support the execution of the
 * [OpenJDK](https://openjdk.java.net/) version 1.8+
 * [FakeSMTP](http://nilhcem.github.com/FakeSMTP/downloads/fakeSMTP-latest.zip) latest
 
-An [example script](docs/assets/scripts/install.sh) is provided that has been tested to work on a clean Ubuntu 18.04 instance.
+* Windows and Mac users get [Docker Compose](https://docs.docker.com/compose/) installed automatically with [Docker](https://www.docker.com/) for Windows/Mac.
+* Linux users can read the [install instructions](https://docs.docker.com/compose/install/#install-compose) or can install via pip:
+```bash
+pip install docker-compose
+```
+
+* Windows Users must set the following 2 ENV vars:
+ * `COMPOSE_CONVERT_WINDOWS_PATHS=1`
+ * `PWD=/path/to/checkout/for/stack-docker`
+  * for example: `/c/Users/myusername/elastic/stack-docker`
+  * Note: your paths must be in the form of `/c/path/to/place` using `C:\path\to\place` will not work
+ * You can set these three ways:
+   1. Temporarily add an env var in powershell use: `$Env:COMPOSE_CONVERT_WINDOWS_PATHS=1`
+   2. Permanently add an env var in powershell use: `[Environment]::SetEnvironmentVariable("COMPOSE_CONVERT_WINDOWS_PATHS", "1", "Machine")`
+   > Note: you will need to refresh or create a new powershell for this env var to take effect
+   3. in System Properties add the environment variables.
+
+* At least 8GiB of RAM for the containers. Windows and Mac users _must_
+configure their Docker virtual machine to have more than the default 2 GiB of
+RAM:
+
+![Docker VM memory settings](docs/assets/images/docker-vm-memory-settings.png)
+
+* Linux Users must set the following configuration as `root`:
+```bash
+sysctl -w vm.max_map_count=262144
+```
+
+By default, the amount of Virtual Memory [is not enough](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html).
+
+An [example prerequisite installation script](docs/assets/scripts/install.sh) is provided that has been tested to work on a clean Ubuntu 18.04 instance.
 
 ```bash
 # global variables
