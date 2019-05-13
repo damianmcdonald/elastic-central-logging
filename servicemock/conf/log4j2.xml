@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Properties>
+        <Property name="basePath">${env:SERVICEMOCK_LOGS}</Property>
+        <Property name="appName">${env:SERVICEMOCK_NAME}</Property>
+        <Property name="uniqueId">${env:HOSTNAME}</Property>
+    </Properties>
+    <Appenders>
+        <RollingFile
+                name="EnglishMockFileLogger"
+                fileName="${basePath}/${appName}-ENGLISH-${uniqueId}.log"
+                filePattern="${basePath}/${appName}-ENGLISH-${uniqueId}-%d{MM-dd-yyyy}-%i.log.gz"
+                ignoreExceptions="false">
+            <PatternLayout>
+                <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %m%n%ex</pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="5"/>
+        </RollingFile>
+        <RollingFile
+                name="EsperantoMockFileLogger"
+                fileName="${basePath}/${appName}-ESPERANTO-${uniqueId}.log"
+                filePattern="${basePath}/${appName}-ESPERANTO-${uniqueId}-%d{MM-dd-yyyy}-%i.log.gz"
+                ignoreExceptions="false">
+            <PatternLayout>
+                <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %m%n%ex</pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="5"/>
+        </RollingFile>
+        <RollingFile
+                name="LatinMockFileLogger"
+                fileName="${basePath}/${appName}-LATIN-${uniqueId}.log"
+                filePattern="${basePath}/${appName}-LATIN-${uniqueId}-%d{MM-dd-yyyy}-%i.log.gz"
+                ignoreExceptions="false">
+            <PatternLayout>
+                <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %m%n%ex</pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="5"/>
+        </RollingFile>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%-5p %d [%t] %c: %m%n"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+
+        <!-- App specific logging -->
+        <AsyncLogger name="com.github.damianmcdonald.servicemock.loggers.english" level="TRACE">
+            <AppenderRef ref="EnglishMockFileLogger"/>
+        </AsyncLogger>
+
+        <AsyncLogger name="com.github.damianmcdonald.servicemock.loggers.esperanto" level="TRACE">
+            <AppenderRef ref="EsperantoMockFileLogger"/>
+        </AsyncLogger>
+
+        <AsyncLogger name="com.github.damianmcdonald.servicemock.loggers.latin" level="TRACE">
+            <AppenderRef ref="LatinMockFileLogger"/>
+        </AsyncLogger>
+
+        <AsyncRoot level="WARN">
+            <AppenderRef ref="Console"/>
+        </AsyncRoot>
+
+    </Loggers>
+
+</Configuration>

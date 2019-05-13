@@ -81,14 +81,15 @@ services:
       retries: 5
 
   servicemock:
-    image: damianmcdonald/servicemock:1.0.2
+    image: damianmcdonald/servicemock:1.1.0
     environment:
      - SERVICEMOCK_LOGS=/app/logs
      - SERVICEMOCK_NAME=servicemock
     volumes:
       - './servicemock/logs:/app/logs'
+      - './servicemock/conf:/app/config'
     healthcheck:
-      test: if ps -a | grep [s]ervicemock-1.0.2.jar ; then echo 0; else echo 1; fi
+      test: if ps -a | grep [s]ervicemock-1.0.3.jar ; then echo 0; else echo 1; fi
       interval: 30s
       timeout: 10s
       retries: 5

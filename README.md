@@ -21,16 +21,16 @@ To simulate a *real world* usage of the Elastic Stack, Yelp's [elastalert](https
 | [Logstash](https://www.elastic.co/products/logstash) | Logstash is an open source, server-side data processing pipeline that ingests data from a multitude of sources simultaneously, transforms it, and then sends it to Elasticsearch. |
 | [Filebeat](https://www.elastic.co/products/beats/filebeat) | Filebeat offers a lightweight way to forward and centralize logs and files. |
 | [Metricbeat](https://www.elastic.co/products/beats/metricbeat) | Collects metrics from your systems and services. From CPU to memory, Redis to NGINX, and much more, Metricbeat is a lightweight way to send system and service statistics. |
-| [Elastalert](https://github.com/Yelp/elastalert) | ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch. |
+| [Elasticalerts](https://github.com/damianmcdonald/elastic-alerts) | ElasticAlerts uses the [Yelp elastalert](https://github.com/Yelp/elastalert) framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch. |
 | [Servicemock](https://github.com/damianmcdonald/servicemock) | A Spring Boot application that generates multiple log files with random log data with different log levels and exceptions. |
 
 ## Process flow
 The process flow of the project can be described as follows:
 
  1. `Servicemock` component generates log files. These log files are generated in the [servicemock/logs](servicemock/logs) directory. 3 separate log files are generated with the following format;
-* *env.SERVICEMOCK_NAME-FRONTOFFICE.log*
-* *env.SERVICEMOCK_NAME-BACKOFFICE.log*
-* *env.SERVICEMOCK_NAME-CTI.log*
+* *env.SERVICEMOCK_NAME-ENGLISH-$HOSTNAME.log*
+* *env.SERVICEMOCK_NAME-ESPERANTO-$HOSTNAME.log*
+* *env.SERVICEMOCK_NAME-LATIN-$HOSTNAME.log*
 
 2. `Filebeat` component monitors the log files in the [servicemock/logs](servicemock/logs) directory and ships any new updates contained within the logs to the `logstash` component.
 
@@ -42,7 +42,7 @@ The process flow of the project can be described as follows:
 
 6. `Kibana` component is used to visualize the data stored in the `elasticsearch` component.
 
-7. `elastalert` component is used to execute rules against the `elasticsearch` component. If any of these rules are violated then the `elastalert` component sends an email alert notification.
+7. `elasticalert` component is used to execute rules against the `elasticsearch` component. If any of these rules are violated then the `elasticalert` component sends an email alert notification.
 
 # Getting started
 
@@ -164,8 +164,6 @@ Each running container will list its health status (Healthy or Unhealthy).
 
 Given that the `elastic-central-logging` project is orchestrated using [Docker Compose](https://docs.docker.com/compose/), you can view all the key details of the project by reading the [docker-compose.yml](docker-compose.yml) file.
 
-In this sense, the project is self-documenting, following an IaC (Infrastructure as Code) approach.
-
 ```yml
 version: '3.6'
 services:
@@ -250,14 +248,15 @@ services:
       retries: 5
 
   servicemock:
-    image: damianmcdonald/servicemock:1.0.2
+    image: damianmcdonald/servicemock:1.1.0
     environment:
      - SERVICEMOCK_LOGS=/app/logs
      - SERVICEMOCK_NAME=servicemock
     volumes:
       - './servicemock/logs:/app/logs'
+      - './servicemock/conf:/app/config'
     healthcheck:
-      test: if ps -a | grep [s]ervicemock-1.0.2.jar ; then echo 0; else echo 1; fi
+      test: if ps -a | grep [s]ervicemock-1.0.3.jar ; then echo 0; else echo 1; fi
       interval: 30s
       timeout: 10s
       retries: 5
@@ -337,6 +336,56 @@ All components of the `elastic-central-logging` project have their respective `c
 │   └── conf
 │       ├── metricbeat.yml
 │       └── setup-beat.sh
-├── servicemock
-│   └── logs
+└── servicemock
+    ├── conf
+    │   ├── application.properties
+    │   └── log4j2.xml
 ```
+
+### Elastic components
+Configuration of the Elastic components use the standard configuration approach as prescribed by Elastic.
+
+* [Configure Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/settings.html)
+* [Configure Kibana](https://www.elastic.co/guide/en/kibana/current/settings.html)
+* [Configure Logstash](https://www.elastic.co/guide/en/logstash/current/logstash-settings-file.html)
+* [Configure Filebeat](https://www.elastic.co/guide/en/beats/filebeat/current/configuring-howto-filebeat.html)
+* [Configure Metricbeat](https://www.elastic.co/guide/en/beats/metricbeat/current/metricbeat-configuration.html)
+
+### Servicemock component
+`Servicemock` is a Spring Boot application that reads its configuration at launch time from the [servicemock/conf](servicemock/conf) directory.
+
+There are two configuration files:
+* `application.properties`: this is the standard Spring Boot configuration file. In the context of the `Servicemock` component, this configuration file is used to define the frequency of logging events.
+* `log4j2.xml`: this file specifies the logging behaviour (log file locations, log file name, logger levels etc.) of the `Servicemock` component.
+
+### Elasticalert component
+The `Elasticalert` component is a containerized version of [Yelp's elastalert](https://github.com/Yelp/elastalert).
+
+Elastalert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
+
+Elastalert is well documented so please be sure to take a look at the [Elastalert Official Documentation](https://elastalert.readthedocs.io/en/latest/elastalert.html).
+
+Elastalert defines a [config.yaml](elasticalert/conf/config.yaml) file which contains the basic details required to setup the rules engine.
+
+```yaml
+rules_folder: /app/config/rules
+run_every:
+  seconds: 15
+buffer_time:
+  minutes: 15
+es_host: localhost
+es_port: 9200
+writeback_index: elastalert_status
+alert_time_limit:
+  days: 2
+```
+
+See the [Configuration reference](https://elastalert.readthedocs.io/en/latest/elastalert.html#configuration) for additional details.
+
+In addition to the [config.yaml](elasticalert/conf/config.yaml), Elastalert requires the creation of *rule* files which define the alert conditions that Elastalert will monitor.
+
+`elastic-central-logging` defines two simple frequency based rules; [error_checks.yaml](elasticalert/conf/rules/error_checks.yaml) and [exception_checks.yaml](elasticalert/conf/rules/exception_checks.yaml).
+
+Exentensive documentation is available describing the [Rule Types and Configuration Options](https://elastalert.readthedocs.io/en/latest/ruletypes.html).
+
+Furthermore, you can take a look at the [example rules](https://github.com/Yelp/elastalert/tree/master/example_rules) that are provided within the Elastalert project.
