@@ -158,16 +158,25 @@ mv -v $DISTRIB_DIR/$FAKESMTP_EXTRACTED_DIR $TOOLS_DIR/fakesmtp/$FAKESMTP_EXTRACT
 ## Running the stack
 With the prerequisites fulfilled, you are now ready to run the stack.
 
+We will assume that `$PROJECT_ROOT`refers to the directory where you cloned the `elastic-central-logging` project.
+
 1. Run the FakeSMTP server, we will need this to receive the alert emails.
 ```bash
-java jar fakeSMTP -s -p 2525 -o /opt/devel/tools/fakesmtp/fakeSMTP-2.0.jar
+cd $PROJECT_ROOT/fakesmtp
+./run-fakesmtp.sh
 ```
-2. Navigate to the directory where you cloned the `elastic-central-logging` project.
+
+2. Run the `servicemock` component to start generating log files. The log files will be written to `$PROJECT_ROOT/servicemock/logs`.
+```bash
+cd $PROJECT_ROOT/servicemock
+./run-servicemock.sh
+```
 
 3. Spin up the stack using `docker-compose`.
 ```bash
 docker-compose up
 ```
+
 4. Be patient! The stack will take about 3-5 minutes to be fully operational.
 
 If everything has gone well, you will eventually (make sure to wait between 5-10 minutes) start receiving alert emails into FakeSMTP.
@@ -180,7 +189,7 @@ Some URLs that can be accessed to check different elements of the stack:
 | http://localhost:9200/_cat/indices?v&pretty | This endpoint will allow you to check the Elasticsearch indexes. |
 | http://localhost:5601 | Base endpoint of Kibana. This URL can be used to visualize the data stored in Elasticsearch |
 
-You can also check the health of the stack by listing the running Docker process from a terminal.
+You can also check the health of the stack by listing the running Docker processes from a terminal.
 
 ```bash
 docker ps
@@ -201,11 +210,11 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.0.1
     container_name: elasticsearch
-    secrets:
-      - source: elasticsearch.yml
-        target: /usr/share/elasticsearch/config/elasticsearch.yml
     ports: ['9200:9200']
     networks: ['stack']
+    volumes:
+      - './elasticsearch/conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro'
+      - './elasticsearch/data:/usr/share/elasticsearch/data:rw'
     healthcheck:
       test: curl -s https://localhost:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
       interval: 30s
@@ -215,11 +224,11 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:7.0.1
     container_name: kibana
-    secrets:
-      - source: kibana.yml
-        target: /usr/share/kibana/config/kibana.yml
     ports: ['5601:5601']
     networks: ['stack']
+    volumes:
+      - './kibana/conf/kibana.yml:/usr/share/kibana/config/kibana.yml:ro'
+      - './kibana/data:/usr/share/kibana/data:rw'
     healthcheck:
       test: curl -s https://localhost:5601 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
       interval: 30s
@@ -229,14 +238,11 @@ services:
   logstash:
     image: docker.elastic.co/logstash/logstash:7.0.1
     container_name: logstash
-    secrets:
-      - source: logstash.yml
-        target: /usr/share/logstash/config/logstash.yml
     ports: ['5044:5044']
     networks: ['stack']
     volumes:
-      - './logstash/conf:/usr/share/logstash/pipeline'
-    command: logstash -f /usr/share/logstash/pipeline/custom-logstash.conf
+      - './logstash/conf:/usr/share/logstash/config:ro'
+      - './logstash/pipeline:/usr/share/logstash/pipeline:ro'
     healthcheck:
       test: bin/logstash -t
       interval: 60s
@@ -251,10 +257,9 @@ services:
        - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
        - /:/hostfs:ro
     command: metricbeat --strict.perms=false -e
-    secrets:
-      - source: metricbeat.yml
-        target: /usr/share/metricbeat/metricbeat.yml
     networks: ['stack']
+    volumes:
+      - './metricbeat/conf/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro'
     healthcheck:
       test: metricbeat test config
       interval: 30s
@@ -264,31 +269,15 @@ services:
   filebeat:
     image: docker.elastic.co/beats/filebeat:7.0.1
     container_name: filebeat
-    command: filebeat --strict.perms=false -e
-    secrets:
-      - source: filebeat.yml
-        target: /usr/share/filebeat/filebeat.yml
     volumes:
-      - './servicemock/logs:/var/log'
+      - './filebeat/conf/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro'
+      - './servicemock/logs:/var/log:ro'
+    command: filebeat --strict.perms=false -e
     networks: ['stack']
     healthcheck:
       test: filebeat test config
       interval: 30s
       timeout: 15s
-      retries: 5
-
-  servicemock:
-    image: damianmcdonald/servicemock:1.1.0
-    environment:
-     - SERVICEMOCK_LOGS=/app/logs
-     - SERVICEMOCK_NAME=servicemock
-    volumes:
-      - './servicemock/logs:/app/logs'
-      - './servicemock/conf:/app/config'
-    healthcheck:
-      test: if ps -a | grep [s]ervicemock-1.0.3.jar ; then echo 0; else echo 1; fi
-      interval: 30s
-      timeout: 10s
       retries: 5
 
   elasticalert:
@@ -298,7 +287,7 @@ services:
      - ELASTICSEARCH_HOST=localhost
      - ELASTICSEARCH_PORT=9200
     volumes:
-      - './elasticalert/conf:/app/config'
+      - './elasticalert/conf:/app/config:ro'
     network_mode: "host"
     healthcheck:
       test: if ps -aux | grep elastalert ; then echo 0; else echo 1; fi
@@ -307,18 +296,6 @@ services:
       retries: 5
 
 networks: {stack: {}}
-
-secrets:
-  elasticsearch.yml:
-    file: ./elasticsearch/conf/elasticsearch.yml
-  kibana.yml:
-    file: ./kibana/conf/kibana.yml
-  logstash.yml:
-    file: ./logstash/conf/logstash.yml
-  metricbeat.yml:
-    file: ./metricbeat/conf/metricbeat.yml
-  filebeat.yml:
-    file: ./filebeat/conf/filebeat.yml
 ```
 
 The Elastic Stack components all use the official Docker images provided by Elastic.
@@ -337,7 +314,7 @@ For more details of the `Elastalert` project please refer to the respective [Git
 
 ## Configuration
 
-All components of the `elastic-central-logging` project have their respective `conf` folder where configuration files (or output locations) required by the components are defined.
+All components of the `elastic-central-logging` project have their respective `conf` folders where configuration files required by the components are defined.
 
 ```bash
 ├── elasticalert
@@ -350,26 +327,40 @@ All components of the `elastic-central-logging` project have their respective `c
 │   ├── conf
 │   │   └── elasticsearch.yml
 │   └── data
+├── fakesmtp
+│   ├── bin
+│   │   └── fakeSMTP-2.0.jar
+│   ├── mail-output
+│   └── run-fakesmtp.sh
 ├── filebeat
-│   └── conf
-│       ├── filebeat.yml
-│       └── setup-beat.sh
+│   ├── conf
+│   │   └── filebeat.yml
+│   └── create-dashboards.sh
 ├── kibana
-│   └── conf
-│       └── kibana.yml
+│   ├── conf
+│   │   └── kibana.yml
+│   ├── data
+│   └── real-time-monitor-dashboard.json
 ├── logstash
-│   └── conf
-│       ├── custom-logstash.conf
-│       ├── logstash.conf
-│       └── logstash.yml
+│   ├── conf
+│   │   ├── jvm.options
+│   │   ├── log4j2.properties
+│   │   ├── logstash.conf
+│   │   ├── logstash.yml
+│   │   ├── pipelines.yml
+│   │   └── startup.options
+│   └── pipeline
+│       └── logstash.conf
 ├── metricbeat
-│   └── conf
-│       ├── metricbeat.yml
-│       └── setup-beat.sh
+│   ├── conf
+│   │   └── metricbeat.yml
+│   └── create-dashboards.sh
 └── servicemock
     ├── conf
     │   ├── application.properties
     │   └── log4j2.xml
+    ├── logs
+    └── run-servicemock.sh
 ```
 
 ### Elastic components
@@ -419,3 +410,49 @@ In addition to the [config.yaml](elasticalert/conf/config.yaml), Elastalert requ
 Exentensive documentation is available describing the [Rule Types and Configuration Options](https://elastalert.readthedocs.io/en/latest/ruletypes.html).
 
 Furthermore, you can take a look at the [example rules](https://github.com/Yelp/elastalert/tree/master/example_rules) that are provided within the Elastalert project.
+
+### Setting up Kibana dashboards
+With the `elastic-central-logging` stack running, you can setup dashboards in Kibana to visualize the real-time monitoring data that is provided by the `metricbeat` component.
+
+1. Execute the metricbeat `create-dashboards.sh` script to create the required index and dashboards in Kibana.
+```bash
+cd $PROJECT_ROOT/metricbeat
+./create-dashboards.sh
+```
+2. Open Kibana in your preferred web browser; http://localhost:5602
+
+3. Navigate to Management -> Kibana -> Index Patterns (click the icon highlighted in red).
+
+![Kibana Management](docs/assets/images/kibana-add-index-menu.png)
+
+4. Select the `metricbeat-*` index and make it the default by clicking the * icon.
+
+![Default Index](docs/assets/images/kibana-add-index-default.png)
+
+5. Create a new dashboard (click the icon highlighted in red).
+
+![Create Dashboard](docs/assets/images/kibana-add-dashboard-menu.png)
+
+6. Click the `Add` button to add some Visualizations to the dashboard.
+
+![Add Visualizations](docs/assets/images/kibana-add-dashboard.png)
+
+7. Add the following Dashboards
+  * *CPU Usage Gauge [Metricbeat System] ECS*
+  * *System Load [Metricbeat System] ECS*
+  * *Memory Usage Gauge [Metricbeat System] ECS*
+  * *Memory Usage [Metricbeat System] ECS*
+  * *CPU Usage [Metricbeat System] ECS*
+  * *Load Gauge [Metricbeat System] ECS*
+  * *Disk Usage [Metricbeat System] ECS*
+  * *Swap usage [Metricbeat System] ECS*
+  * *Inbound Traffic [Metricbeat System] ECS*
+  * *Outbound Traffic [Metricbeat System] ECS*
+  * *Network Traffic (Packets) [Metricbeat System] ECS*
+  * *Hosts histogram by CPU usage [Metricbeat System] ECS*
+
+8. The final dashboard will look something like the screenshot below.
+
+![Real-Time Monitoring Dashboard](docs/assets/images/kibana-final-dashboard.png)
+
+9. It is also possible to import this dashboard via the `$PROJECT_ROOT/kibana/real-time-monitor-dashboard.json`.

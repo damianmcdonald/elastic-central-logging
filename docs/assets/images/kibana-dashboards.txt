@@ -1,0 +1,16 @@
+CPU Usage Gauge [Metricbeat System] ECS
+Memory Usage Gauge [Metricbeat System] ECS
+System Load [Metricbeat System] ECS
+Memory Usage [Metricbeat System] ECS
+CPU Usage [Metricbeat System] ECS
+Load Gauge [Metricbeat System] ECS
+Disk Usage [Metricbeat System] ECS
+Swap usage [Metricbeat System] ECS
+Inbound Traffic [Metricbeat System] ECS
+Outbound Traffic [Metricbeat System] ECS
+Network Traffic (Packets) [Metricbeat System] ECS
+Hosts histogram by CPU usage [Metricbeat System] ECS
+
+
+
+

@@ -3,13 +3,12 @@
     <Properties>
         <Property name="basePath">${env:SERVICEMOCK_LOGS}</Property>
         <Property name="appName">${env:SERVICEMOCK_NAME}</Property>
-        <Property name="uniqueId">${env:HOSTNAME}</Property>
     </Properties>
     <Appenders>
         <RollingFile
                 name="EnglishMockFileLogger"
-                fileName="${basePath}/${appName}-ENGLISH-${uniqueId}.log"
-                filePattern="${basePath}/${appName}-ENGLISH-${uniqueId}-%d{MM-dd-yyyy}-%i.log.gz"
+                fileName="${basePath}/${appName}-ENGLISH.log"
+                filePattern="${basePath}/${appName}-ENGLISH-%d{MM-dd-yyyy}-%i.log.gz"
                 ignoreExceptions="false">
             <PatternLayout>
                 <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %m%n%ex</pattern>
@@ -21,8 +20,8 @@
         </RollingFile>
         <RollingFile
                 name="EsperantoMockFileLogger"
-                fileName="${basePath}/${appName}-ESPERANTO-${uniqueId}.log"
-                filePattern="${basePath}/${appName}-ESPERANTO-${uniqueId}-%d{MM-dd-yyyy}-%i.log.gz"
+                fileName="${basePath}/${appName}-ESPERANTO.log"
+                filePattern="${basePath}/${appName}-ESPERANTO-%d{MM-dd-yyyy}-%i.log.gz"
                 ignoreExceptions="false">
             <PatternLayout>
                 <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %m%n%ex</pattern>
@@ -34,8 +33,8 @@
         </RollingFile>
         <RollingFile
                 name="LatinMockFileLogger"
-                fileName="${basePath}/${appName}-LATIN-${uniqueId}.log"
-                filePattern="${basePath}/${appName}-LATIN-${uniqueId}-%d{MM-dd-yyyy}-%i.log.gz"
+                fileName="${basePath}/${appName}-LATIN.log"
+                filePattern="${basePath}/${appName}-LATIN-%d{MM-dd-yyyy}-%i.log.gz"
                 ignoreExceptions="false">
             <PatternLayout>
                 <pattern>[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %m%n%ex</pattern>
